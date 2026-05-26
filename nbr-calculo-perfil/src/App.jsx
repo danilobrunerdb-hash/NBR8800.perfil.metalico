@@ -783,6 +783,17 @@ export default function App() {
                       <p>λ_v = d' / tw = <strong>{results.Shear?.lambda?.toFixed(2)}</strong></p>
                       <p>λ_p = 1.10 * √(Kv*E/Fy) = <strong>{results.Shear?.lambda_p?.toFixed(2)}</strong></p>
                       <p>λ_r = 1.37 * √(Kv*E/Fy) = <strong>{results.Shear?.lambda_r?.toFixed(2)}</strong></p>
+                      <div className="mt-2 p-2 bg-blue-50 border border-blue-100 rounded text-xs text-gray-700">
+                        <p><strong>Cálculo do Vrd:</strong></p>
+                        {results.Shear?.lambda <= results.Shear?.lambda_p ? (
+                          <p>Como λ_v ≤ λ_p → Vrd = Vpl / γa1</p>
+                        ) : results.Shear?.lambda <= results.Shear?.lambda_r ? (
+                          <p>Como λ_p &lt; λ_v ≤ λ_r → Vrd = (λ_p / λ_v) * (Vpl / γa1)</p>
+                        ) : (
+                          <p>Como λ_v &gt; λ_r → Vrd = 1.24 * (λ_p / λ_v)² * (Vpl / γa1)</p>
+                        )}
+                        <p>Vrd,y = {results.Shear?.Vpl?.toFixed(2)} / {material.gamma_a1}</p>
+                      </div>
                       <p className="mt-2 text-primary font-bold">Vrd,y = {results.Shear.Vrd.toFixed(2)} kN</p>
                       <p>Vy,Sd = {loads.Vysd} kN</p>
                     </div>
@@ -790,6 +801,11 @@ export default function App() {
                       <p className="underline mb-2 font-bold text-primary">Cisalhamento X (Mesas):</p>
                       <p>Área Efetiva (Aw_x) = 2 * bf * tf = <strong>{results.ShearX?.Aw?.toFixed(2) || '-'}</strong> cm²</p>
                       <p>Vpl_x = 0.6 * Aw_x * Fy = <strong>{results.ShearX?.Vpl?.toFixed(2) || '-'}</strong> kN</p>
+                      <div className="mt-2 p-2 bg-blue-50 border border-blue-100 rounded text-xs text-gray-700">
+                        <p><strong>Cálculo do Vrd:</strong></p>
+                        <p>Para seções I, Vrd,x = Vpl_x / γa1</p>
+                        <p>Vrd,x = {results.ShearX?.Vpl?.toFixed(2)} / {material.gamma_a1}</p>
+                      </div>
                       <p className="mt-2 text-primary font-bold">Vrd,x = {results.ShearX?.Vrd.toFixed(2) || '-'} kN</p>
                       <p>Vx,Sd = {loads.Vxsd} kN</p>
                     </div>
