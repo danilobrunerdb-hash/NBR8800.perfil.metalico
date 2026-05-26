@@ -426,10 +426,10 @@ export default function App() {
                     title="FLT (Momento X)"
                     sd={loads.Mxsd}
                     rd={results.FLT.Mrd}
-                    lambda={results.FLT.lambda}
-                    lambda_p={results.FLT.lambda_p}
+                    lambda={results.FLT.lambda_LT}
+                    lambda_p={0.40}
                     unit="kN.m"
-                    formula={results.FLT.lambda <= results.FLT.lambda_p ? 'Mpl / γa1 (Plástico)' : results.FLT.lambda <= results.FLT.lambda_r ? 'Inelástico / γa1' : 'Mcr / γa1 (Elástico)'}
+                    formula={results.FLT.lambda_LT <= 0.40 ? 'Mpl / γa1 (Plástico)' : results.FLT.lambda_LT <= 1.40 ? 'Inelástico / γa1' : 'Elástico / γa1'}
                   />
                   <RenderCriteriaCard
                     title="FLM (Momento X)"
@@ -671,21 +671,20 @@ export default function App() {
                   <h4 className="font-bold text-primary mb-2">4.1. Flambagem Lateral com Torção (FLT)</h4>
                   <div className="grid grid-cols-2 gap-4 text-sm font-mono">
                     <div>
-                      <p className="text-[#6b7280]">Parâmetro de Esbeltez:</p>
-                      <p>λ = Lb / ry = {loads.Lb} / {profileData.ry} = <strong>{results.FLT.lambda.toFixed(2)}</strong></p>
-                      <p className="text-[#6b7280] mt-2">Limites Normativos:</p>
-                      <p>λp = 1.76 * √(E/Fy) = <strong>{results.FLT.lambda_p.toFixed(2)}</strong></p>
-                      <p>λr = (Cálculo via Anexo G NBR8800) = <strong>{results.FLT.lambda_r ? results.FLT.lambda_r.toFixed(2) : '-'}</strong></p>
+                      <p className="text-[#6b7280]">Esbeltez Relativa:</p>
+                      <p>λ_LT = √(Mpl / Mcr) = <strong>{results.FLT.lambda_LT.toFixed(2)}</strong></p>
+                      <p className="text-[#6b7280] mt-2">Limites NBR 8800:2024:</p>
+                      <p>Patamar Plástico = <strong>0.40</strong></p>
+                      <p>Limite Elástico = <strong>1.40</strong></p>
                     </div>
                     <div>
                       <p className="text-[#6b7280]">Momentos de Referência:</p>
                       <p>Mpl = Zx * Fy = <strong>{results.FLT.Mpl.toFixed(2)}</strong> kN.cm</p>
-                      <p>Mr = Wx * (Fy - σr) = <strong>{results.FLT.Mr.toFixed(2)}</strong> kN.cm</p>
-                      <p>Mcr = (Equação Anexo G) = <strong>{results.FLT.Mrc ? results.FLT.Mrc.toFixed(2) : '-'}</strong> kN.cm</p>
+                      <p>Mcr = (Eq. Momento Crítico) = <strong>{results.FLT.Mrc ? results.FLT.Mrc.toFixed(2) : '-'}</strong> kN.cm</p>
                     </div>
                   </div>
                   <div className="mt-4 bg-[#eff6ff] p-3 rounded text-sm border border-[#bfdbfe]">
-                    <p><strong>Regime:</strong> {results.FLT.lambda <= results.FLT.lambda_p ? 'Plástico (λ ≤ λp)' : results.FLT.lambda <= results.FLT.lambda_r ? 'Inelástico (λp < λ ≤ λr)' : 'Elástico (λ > λr)'}</p>
+                    <p><strong>Regime:</strong> {results.FLT.lambda_LT <= 0.40 ? 'Plástico (λ_LT ≤ 0.40)' : results.FLT.lambda_LT <= 1.40 ? 'Inelástico (0.40 < λ_LT ≤ 1.40)' : 'Elástico (λ_LT > 1.40)'}</p>
                     <p className="mt-1 text-base font-bold text-[#1e3a8a]">Mrd,FLT = {results.FLT.Mrd.toFixed(2)} kN.m</p>
                   </div>
                 </div>
