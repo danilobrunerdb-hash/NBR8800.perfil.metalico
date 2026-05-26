@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NBR 8800 Verifier</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+              "on-surface": "var(--on-surface)",
+              "on-secondary-fixed": "var(--on-secondary-fixed)",
+              "on-tertiary": "var(--on-tertiary)",
+              "error-container": "var(--error-container)",
+              "primary": "var(--primary)",
+              "tertiary-fixed-dim": "var(--tertiary-fixed-dim)",
+              "inverse-surface": "var(--inverse-surface)",
+              "inverse-on-surface": "var(--inverse-on-surface)",
+              "surface-container-high": "var(--surface-container-high)",
+              "secondary-fixed": "var(--secondary-fixed)",
+              "on-secondary": "var(--on-secondary)",
+              "primary-container": "var(--primary-container)",
+              "on-primary-fixed": "var(--on-primary-fixed)",
+              "inverse-primary": "var(--inverse-primary)",
+              "on-tertiary-fixed-variant": "var(--on-tertiary-fixed-variant)",
+              "tertiary-container": "var(--tertiary-container)",
+              "secondary-fixed-dim": "var(--secondary-fixed-dim)",
+              "primary-fixed": "var(--primary-fixed)",
+              "surface-variant": "var(--surface-variant)",
+              "on-primary-fixed-variant": "var(--on-primary-fixed-variant)",
+              "primary-fixed-dim": "var(--primary-fixed-dim)",
+              "secondary": "var(--secondary)",
+              "on-surface-variant": "var(--on-surface-variant)",
+              "tertiary": "var(--tertiary)",
+              "tertiary-fixed": "var(--tertiary-fixed)",
+              "on-secondary-fixed-variant": "var(--on-secondary-fixed-variant)",
+              "on-error-container": "var(--on-error-container)",
+              "on-secondary-container": "var(--on-secondary-container)",
+              "surface-bright": "var(--surface-bright)",
+              "background": "var(--background)",
+              "surface": "var(--surface)",
+              "surface-container-lowest": "var(--surface-container-lowest)",
+              "on-primary-container": "var(--on-primary-container)",
+              "outline": "var(--outline)",
+              "on-error": "var(--on-error)",
+              "on-tertiary-fixed": "var(--on-tertiary-fixed)",
+              "secondary-container": "var(--secondary-container)",
+              "surface-dim": "var(--surface-dim)",
+              "on-tertiary-container": "var(--on-tertiary-container)",
+              "error": "var(--error)",
+              "on-primary": "var(--on-primary)",
+              "surface-container-low": "var(--surface-container-low)",
+              "outline-variant": "var(--outline-variant)",
+              "surface-tint": "var(--surface-tint)",
+              "surface-container": "var(--surface-container)",
+              "on-background": "var(--on-background)",
+              "surface-container-highest": "var(--surface-container-highest)"
+            },
+            "borderRadius": {
+              "DEFAULT": "0.125rem",
+              "lg": "0.25rem",
+              "xl": "0.5rem",
+              "full": "0.75rem"
+            },
+            "spacing": {
+              "sm": "8px",
+              "margin-mobile": "16px",
+              "xs": "4px",
+              "xl": "40px",
+              "gutter": "16px",
+              "margin-desktop": "32px",
+              "md": "16px",
+              "base": "4px",
+              "lg": "24px"
+            },
+            "fontFamily": {
+              "data-mono": ["JetBrains Mono"],
+              "body-lg": ["Inter"],
+              "headline-lg": ["Inter"],
+              "body-md": ["Inter"],
+              "headline-sm": ["Inter"],
+              "label-caps": ["Inter"],
+              "headline-md": ["Inter"]
+            },
+            "fontSize": {
+              "data-mono": ["13px", {"lineHeight": "1", "fontWeight": "500"}],
+              "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+              "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+              "body-md": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+              "headline-sm": ["18px", {"lineHeight": "1.4", "fontWeight": "600"}],
+              "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700"}],
+              "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}]
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
