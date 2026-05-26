@@ -70,24 +70,26 @@ export default function App() {
     setTimeout(() => setOcrProgress(''), 3000);
   };
 
-  const findLightestProfile = async () => {
+  const findLightestProfile = () => {
     let lightest = null;
     let minArea = Infinity;
+    const nt = parseFloat(loads.Nt_sd) || 0;
+    const nc = parseFloat(loads.Nc_sd) || 0;
+    const computedNsd = nt > 0 ? nt : -nc;
+    const finalLoads = { ...loads, Nsd: computedNsd };
+
     for (const p of profiles) {
       try {
-        const res = await fetch('http://localhost:3001/api/calcular', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ profileName: p.nome, loads, material })
-        });
-        const data = await res.json();
-        if (data.results && data.results.overallPass) {
-          if (data.profile.Area < minArea) {
-            minArea = data.profile.Area;
+        const resultsData = calculateProfile(p, finalLoads, material);
+        if (resultsData && resultsData.overallPass) {
+          if (p.Area < minArea) {
+            minArea = p.Area;
             lightest = p;
           }
         }
-      } catch (err) { }
+      } catch (err) {
+        console.error("Erro ao calcular perfil", p.nome, err);
+      }
     }
     if (lightest) setSelectedProfileName(lightest.nome);
     else alert("Nenhum perfil atende aos esforços solicitados!");
