@@ -21,10 +21,11 @@ export function calculateProfile(profile, loads, material) {
   const Ly = parseFloat(loads.Ly) || Lb;    // Comprimento de flambagem em Y (cm)
 
   // Propriedades do material (Aço)
-  const fy = material.fy;                   // Tensão de escoamento (MPa)
-  const E = material.E;                     // Módulo de elasticidade (MPa)
-  const gamma_a1 = material.gamma_a1;       // Coeficiente de minoração da resistência ao escoamento
-  const Kv = material.Kv;                   // Parâmetro de flambagem por cisalhamento (normalmente 5.34 para almas sem enrijecedores)
+  // Garantindo que todos os valores sejam convertidos para float, mesmo se o usuário digitar com vírgula no input
+  const fy = parseFloat(String(material.fy).replace(',', '.')) || 345;                   
+  const E = parseFloat(String(material.E).replace(',', '.')) || 200000;                     
+  const gamma_a1 = parseFloat(String(material.gamma_a1).replace(',', '.')) || 1.10;       
+  const Kv = parseFloat(String(material.Kv).replace(',', '.')) || 5.34;                   
 
   // Extração das propriedades geométricas do perfil em avaliação
   const {
