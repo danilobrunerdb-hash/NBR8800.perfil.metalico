@@ -192,20 +192,14 @@ export function calculateProfile(profile, loads, material) {
   };
 
   // 5.2 CISALHAMENTO NO EIXO X (Mesas resistindo)
+  // Conforme NBR 8800 item 5.4.3.1.2 e 5.4.3.1.3, para seções retangulares plenas (mesas),
+  // o valor de lambda não é aplicável, logo a resistência é sempre o Vpl da mesa / gamma_a1.
   const Aw_x = 2 * bf * tf;
   const Vpl_x = 0.6 * Aw_x * (fy / 10);
-  const lambda_Vx = (bf/2) / tf; 
   const lambda_p_Vx = 1.1 * Math.sqrt((1.2 * E) / fy);
   const lambda_r_Vx = 1.37 * Math.sqrt((1.2 * E) / fy);
 
-  let Vrd_x = 0;
-  if (lambda_Vx <= lambda_p_Vx) {
-    Vrd_x = Vpl_x / gamma_a1;
-  } else if (lambda_Vx > lambda_p_Vx && lambda_Vx <= lambda_r_Vx) {
-    Vrd_x = (lambda_p_Vx / lambda_Vx) * (Vpl_x / gamma_a1);
-  } else {
-    Vrd_x = 1.24 * Math.pow(lambda_p_Vx / lambda_Vx, 2) * (Vpl_x / gamma_a1);
-  }
+  const Vrd_x = Vpl_x / gamma_a1;
 
   results.ShearX = {
     Vrd: Vrd_x,
