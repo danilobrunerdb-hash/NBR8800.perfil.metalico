@@ -781,7 +781,8 @@ export default function App() {
                       <p>Área Efetiva (Aw) = d * tw = <strong>{results.Shear?.Aw?.toFixed(2)}</strong> cm²</p>
                       <p>Vpl = 0.6 * Aw * Fy = <strong>{results.Shear?.Vpl?.toFixed(2)}</strong> kN</p>
                       <p>λ_v = d' / tw = <strong>{results.Shear?.lambda?.toFixed(2)}</strong></p>
-                      <p>λ_p = 1.08 * √(Kv*E/Fy) = <strong>{results.Shear?.lambda_p?.toFixed(2)}</strong></p>
+                      <p>λ_p = 1.10 * √(Kv*E/Fy) = <strong>{results.Shear?.lambda_p?.toFixed(2)}</strong></p>
+                      <p>λ_r = 1.37 * √(Kv*E/Fy) = <strong>{results.Shear?.lambda_r?.toFixed(2)}</strong></p>
                       <p className="mt-2 text-primary font-bold">Vrd,y = {results.Shear.Vrd.toFixed(2)} kN</p>
                       <p>Vy,Sd = {loads.Vysd} kN</p>
                     </div>
