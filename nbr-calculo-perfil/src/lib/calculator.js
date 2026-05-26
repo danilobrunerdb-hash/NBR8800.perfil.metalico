@@ -241,7 +241,7 @@ export function calculateProfile(profile, loads, material) {
   // ============================================================================
   // 7. ESFORÇO AXIAL: TRAÇÃO
   // ============================================================================
-  const NtRd = (Area * fy) / gamma_a1; // Capacidade no escoamento bruto
+  const NtRd = (Area * (fy / 10)) / gamma_a1; // Capacidade no escoamento bruto (kN)
   const isTension = Nsd > 0;
 
   results.Tension = {
@@ -254,16 +254,16 @@ export function calculateProfile(profile, loads, material) {
   // ============================================================================
   
   // 8.1 Flambagem Global
-  const G_val = 7700; // Constante de rigidez à torção do aço
+  const G_val = 7700; // Constante de rigidez à torção do aço (kN/cm²)
   
-  const Nex = (Math.pow(Math.PI, 2) * E * Ix) / Math.pow(Lx, 2);
-  const Ney = (Math.pow(Math.PI, 2) * E * Iy) / Math.pow(Ly, 2);
+  const Nex = (Math.pow(Math.PI, 2) * (E / 10) * Ix) / Math.pow(Lx, 2);
+  const Ney = (Math.pow(Math.PI, 2) * (E / 10) * Iy) / Math.pow(Ly, 2);
   const r0_squared = Math.pow(rx, 2) + Math.pow(ry, 2);
   const Lz = Ly; 
-  const Nez = ((Math.pow(Math.PI, 2) * E * realCw) / Math.pow(Lz, 2) + G_val * It) / r0_squared;
+  const Nez = ((Math.pow(Math.PI, 2) * (E / 10) * realCw) / Math.pow(Lz, 2) + G_val * It) / r0_squared;
   
   const Ne = Math.min(Nex, Ney, Nez);
-  const lambda0 = Math.sqrt((Area * fy) / Ne);
+  const lambda0 = Math.sqrt((Area * (fy / 10)) / Ne);
   
   let chi = 1;
   if (lambda0 <= 1.5) {
@@ -306,7 +306,7 @@ export function calculateProfile(profile, loads, material) {
   let Aef = Area - (4 * Math.max(0, b_AL - bef_AL) * t_AL + Math.max(0, b_AA - bef_AA) * t_AA);
   if (Aef > Area) Aef = Area;
 
-  const NcRd = (chi * Aef * fy) / gamma_a1;
+  const NcRd = (chi * Aef * (fy / 10)) / gamma_a1;
   const isCompression = Nsd < 0;
 
   results.Compression = {
