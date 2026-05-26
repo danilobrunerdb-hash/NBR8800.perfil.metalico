@@ -74,36 +74,34 @@ export function calculateProfile(profile, loads, material) {
   // ============================================================================
   
   // 4.1 FLAMBAGEM LATERAL COM TORÇÃO (FLT)
-  // Instabilidade global onde a viga "tomba" de lado e sofre torção simultaneamente.
-  const beta1 = ((0.7 * fy) * Wx) / (E * It);
+  // Atualizado para a NBR 8800:2024 (Método da Esbeltez Relativa - Item D.2.1)
   const Cb = 1; // Coeficiente de momento uniforme (conservador)
   const Mpl_FLT_cm = (fy / 10) * Zx;
-  const Mr_FLT_cm = 0.7 * (fy / 10) * Wx;
-  const lambda_FLT = Lb / ry;
-  const lambda_p_FLT = 1.76 * Math.sqrt(E / fy);
   
-  const termo_raiz_FLT = 1 + Math.sqrt(1 + (27 * realCw * Math.pow(beta1, 2)) / (Math.pow(Cb, 2) * Iy));
-  const lambda_r_FLT = ((1.38 * Cb * Math.sqrt(Iy * It)) / (ry * It * beta1)) * Math.sqrt(termo_raiz_FLT);
+  // Cálculo do Momento Crítico Elástico (Mcr)
   const Mrc_cm = (Cb * Math.pow(Math.PI, 2) * (E / 10) * Iy / Math.pow(Lb, 2)) * Math.sqrt((realCw / Iy) * (1 + 0.039 * (It * Math.pow(Lb, 2)) / realCw));
 
+  // Esbeltez Relativa para FLT (lambda_LT)
+  const lambda_LT = Math.sqrt(Mpl_FLT_cm / Mrc_cm);
+
   let Mrd_FLT_cm = 0;
-  if (lambda_FLT <= lambda_p_FLT) {
-    // Regime Plástico
-    Mrd_FLT_cm = Mpl_FLT_cm / gamma_a1; 
-  } else if (lambda_FLT > lambda_p_FLT && lambda_FLT <= lambda_r_FLT) {
+  if (lambda_LT <= 0.40) {
+    // Curva patamar (Plástico)
+    Mrd_FLT_cm = Mpl_FLT_cm / gamma_a1;
+  } else if (lambda_LT > 0.40 && lambda_LT <= 1.40) {
     // Regime Inelástico
-    Mrd_FLT_cm = (1 / gamma_a1) * (Mpl_FLT_cm - (Mpl_FLT_cm - Mr_FLT_cm) * ((lambda_FLT - lambda_p_FLT) / (lambda_r_FLT - lambda_p_FLT))); 
+    Mrd_FLT_cm = (1 - 0.49 * (lambda_LT - 0.40)) * Mpl_FLT_cm / gamma_a1;
   } else {
     // Regime Elástico
-    Mrd_FLT_cm = Mrc_cm / gamma_a1; 
+    Mrd_FLT_cm = Mpl_FLT_cm / (gamma_a1 * Math.pow(lambda_LT, 2));
   }
   
   let Mrd_FLT = Mrd_FLT_cm / 100;
   if (Mrd_FLT > Mrd_max) Mrd_FLT = Mrd_max; // Limitador superior normativo
 
   results.FLT = {
-    beta1, Cb, Mpl: Mpl_FLT_cm, Mr: Mr_FLT_cm, Mrc: Mrc_cm,
-    lambda: lambda_FLT, lambda_p: lambda_p_FLT, lambda_r: lambda_r_FLT,
+    Cb, Mpl: Mpl_FLT_cm, Mrc: Mrc_cm,
+    lambda_LT: lambda_LT, 
     Mrd: Mrd_FLT,
     pass: Mrd_FLT >= Mxsd
   };
