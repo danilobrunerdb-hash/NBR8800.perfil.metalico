@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { processFtoolImage } from './lib/ocr';
 import IBeamSVG from './components/IBeamSVG';
 import html2pdf from 'html2pdf.js';
+import { calculateProfile } from './lib/calculator';
+import profilesData from './data/profiles.json';
 
 export default function App() {
   const [profiles, setProfiles] = useState([]);
@@ -22,41 +24,26 @@ export default function App() {
   }, [isDarkMode]);
 
   useEffect(() => {
-    const fetchProfiles = async () => {
-      try {
-        const res = await fetch('http://localhost:3001/api/perfis');
-        const data = await res.json();
-        setProfiles(data);
-        if (data.length > 0) setSelectedProfileName(data[0].nome);
-      } catch (err) {
-        console.error("Erro ao carregar perfis:", err);
-      }
-    };
-    fetchProfiles();
+    setProfiles(profilesData);
+    if (profilesData.length > 0) setSelectedProfileName(profilesData[0].nome);
   }, []);
 
   useEffect(() => {
-    if (!selectedProfileName) return;
-    const performCalculation = async () => {
-      try {
-        const res = await fetch('http://localhost:3001/api/calcular', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ profileName: selectedProfileName, loads, material })
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setProfileData(data.profile);
-          setResults(data.results);
-        } else {
-          console.error("Erro da API:", data.error);
-        }
-      } catch (err) {
-        console.error("Erro na comunicação com o backend:", err);
-      }
-    };
-    performCalculation();
-  }, [selectedProfileName, loads, material]);
+    if (!selectedProfileName || profiles.length === 0) return;
+    const profile = profiles.find(p => p.nome === selectedProfileName);
+    if (profile) {
+      // Ajuste automático do Nsd com base nas entradas de Tração e Compressão
+      const nt = parseFloat(loads.Nt_sd) || 0;
+      const nc = parseFloat(loads.Nc_sd) || 0;
+      const computedNsd = nt > 0 ? nt : -nc;
+
+      const finalLoads = { ...loads, Nsd: computedNsd };
+
+      const resultsData = calculateProfile(profile, finalLoads, material);
+      setProfileData(profile);
+      setResults(resultsData);
+    }
+  }, [selectedProfileName, loads, material, profiles]);
 
   const handleLoadChange = (e) => {
     const { name, value } = e.target;

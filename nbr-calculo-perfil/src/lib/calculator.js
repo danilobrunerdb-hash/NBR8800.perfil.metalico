@@ -1,19 +1,32 @@
 /**
- * calculator.js - Implementação dos cálculos da NBR 8800 para perfis Gerdau W
+ * calculator.js - Módulo de Cálculos Estruturais (NBR 8800)
+ * Responsabilidade: Executar toda a matemática de verificação dos perfis metálicos
+ * diretamente no navegador do usuário (Front-end), garantindo performance e
+ * permitindo a hospedagem 100% gratuita no Vercel (arquivos estáticos).
+ *
+ * Todas as equações seguem as diretrizes da Norma Brasileira NBR 8800:2008.
  */
 
 export function calculateProfile(profile, loads, material) {
-  const Msd = parseFloat(loads.Msd) || 0;
-  const Vsd = parseFloat(loads.Vsd) || 0;
-  const Nsd = parseFloat(loads.Nsd) || 0;
-  const Lb = parseFloat(loads.Lb) || 160;
-  const Lx = parseFloat(loads.Lx) || Lb;
-  const Ly = parseFloat(loads.Ly) || Lb;
-  const fy = material.fy;
-  const E = material.E;
-  const gamma_a1 = material.gamma_a1;
-  const Kv = material.Kv;
+  // Extração das solicitações informadas pelo usuário
+  const Mxsd = parseFloat(loads.Mxsd) || 0; // Momento fletor solicitante em X (kN.m)
+  const Mysd = parseFloat(loads.Mysd) || 0; // Momento fletor solicitante em Y (kN.m)
+  const Vxsd = parseFloat(loads.Vxsd) || 0; // Esforço cortante em X (kN)
+  const Vysd = parseFloat(loads.Vysd) || 0; // Esforço cortante em Y (kN)
+  const Nsd = parseFloat(loads.Nsd) || 0;   // Esforço normal (positivo = tração, negativo = compressão) (kN)
+  
+  // Comprimentos de flambagem
+  const Lb = parseFloat(loads.Lb) || 160;   // Comprimento destravado para flambagem lateral (cm)
+  const Lx = parseFloat(loads.Lx) || Lb;    // Comprimento de flambagem em X (cm)
+  const Ly = parseFloat(loads.Ly) || Lb;    // Comprimento de flambagem em Y (cm)
 
+  // Propriedades do material (Aço)
+  const fy = material.fy;                   // Tensão de escoamento (MPa)
+  const E = material.E;                     // Módulo de elasticidade (MPa)
+  const gamma_a1 = material.gamma_a1;       // Coeficiente de minoração da resistência ao escoamento
+  const Kv = material.Kv;                   // Parâmetro de flambagem por cisalhamento (normalmente 5.34 para almas sem enrijecedores)
+
+  // Extração das propriedades geométricas do perfil em avaliação
   const {
     d, bf, tw, tf, h, d_linha, Area,
     Ix, Wx, rx, Zx,
@@ -24,20 +37,29 @@ export function calculateProfile(profile, loads, material) {
   const realCw = Cw; 
   const results = {};
 
-  // 1. Zx mín requerido
-  // Msd (kN.m) = Msd * 100 (kN.cm)
-  // Zx_min = (Msd * 100 * gamma_a1) / (fy/10)
-  const Zx_min = (Msd * 100 * gamma_a1) / (fy / 10);
+  // ============================================================================
+  // 1. MÓDULOS PLÁSTICOS MÍNIMOS REQUERIDOS (Zx e Zy)
+  // Transforma Mxsd/Mysd de kN.m para kN.cm multiplicando por 100.
+  // ============================================================================
+  const Zx_min = (Mxsd * 100 * gamma_a1) / (fy / 10);
   results.Zx_min = Zx_min;
+  
+  const Zy_min = (Mysd * 100 * gamma_a1) / (fy / 10);
+  results.Zy_min = Zy_min;
 
-  // 2. CAPACIDADE RELATIVA AO MOMENTO
-  // Mrd_max (kN.cm) = (1.5 * Wx * (fy / 10)) / gamma_a1
+  // ============================================================================
+  // 2. CAPACIDADE MÁXIMA RELATIVA AO MOMENTO (Mrd_max)
+  // Limita o momento fletor resistente ao escoamento da seção (limite plástico).
+  // ============================================================================
   const Mrd_max_cm = (1.5 * Wx * (fy / 10)) / gamma_a1;
-  const Mrd_max = Mrd_max_cm / 100; // em kN.m
+  const Mrd_max = Mrd_max_cm / 100; // Converte de kN.cm para kN.m
   results.Mrd_max_cm = Mrd_max_cm;
   results.Mrd_max = Mrd_max;
 
-  // 3. CLASSIFICAÇÃO DO PERFIL (Anexo D)
+  // ============================================================================
+  // 3. CLASSIFICAÇÃO DA ALMA DO PERFIL (Esbeltez)
+  // Determina se a alma sofrerá flambagem local antes do escoamento.
+  // ============================================================================
   const class_lambda = d_linha / tw;
   const class_lambda_r = 5.7 * Math.sqrt(E / fy);
   const esbelto = class_lambda <= class_lambda_r ? 'Não' : 'Sim';
@@ -47,9 +69,14 @@ export function calculateProfile(profile, loads, material) {
     esbelto
   };
 
+  // ============================================================================
+  // 4. VERIFICAÇÕES À FLEXÃO NO EIXO FORTE (X)
+  // ============================================================================
+  
   // 4.1 FLAMBAGEM LATERAL COM TORÇÃO (FLT)
+  // Instabilidade global onde a viga "tomba" de lado e sofre torção simultaneamente.
   const beta1 = ((0.7 * fy) * Wx) / (E * It);
-  const Cb = 1;
+  const Cb = 1; // Coeficiente de momento uniforme (conservador)
   const Mpl_FLT_cm = (fy / 10) * Zx;
   const Mr_FLT_cm = 0.7 * (fy / 10) * Wx;
   const lambda_FLT = Lb / ry;
@@ -61,27 +88,28 @@ export function calculateProfile(profile, loads, material) {
 
   let Mrd_FLT_cm = 0;
   if (lambda_FLT <= lambda_p_FLT) {
-    Mrd_FLT_cm = Mpl_FLT_cm / gamma_a1;
+    // Regime Plástico
+    Mrd_FLT_cm = Mpl_FLT_cm / gamma_a1; 
   } else if (lambda_FLT > lambda_p_FLT && lambda_FLT <= lambda_r_FLT) {
-    Mrd_FLT_cm = (1 / gamma_a1) * (Mpl_FLT_cm - (Mpl_FLT_cm - Mr_FLT_cm) * ((lambda_FLT - lambda_p_FLT) / (lambda_r_FLT - lambda_p_FLT)));
+    // Regime Inelástico
+    Mrd_FLT_cm = (1 / gamma_a1) * (Mpl_FLT_cm - (Mpl_FLT_cm - Mr_FLT_cm) * ((lambda_FLT - lambda_p_FLT) / (lambda_r_FLT - lambda_p_FLT))); 
   } else {
-    Mrd_FLT_cm = Mrc_cm / gamma_a1;
+    // Regime Elástico
+    Mrd_FLT_cm = Mrc_cm / gamma_a1; 
   }
   
   let Mrd_FLT = Mrd_FLT_cm / 100;
-  if (Mrd_FLT > Mrd_max) Mrd_FLT = Mrd_max;
+  if (Mrd_FLT > Mrd_max) Mrd_FLT = Mrd_max; // Limitador superior normativo
 
   results.FLT = {
     beta1, Cb, Mpl: Mpl_FLT_cm, Mr: Mr_FLT_cm, Mrc: Mrc_cm,
     lambda: lambda_FLT, lambda_p: lambda_p_FLT, lambda_r: lambda_r_FLT,
-    Mrd_formula1: Mpl_FLT_cm / gamma_a1,
-    Mrd_formula2: (1 / gamma_a1) * (Mpl_FLT_cm - (Mpl_FLT_cm - Mr_FLT_cm) * ((lambda_FLT - lambda_p_FLT) / (lambda_r_FLT - lambda_p_FLT))),
-    Mrd_formula3: Mrc_cm / gamma_a1,
     Mrd: Mrd_FLT,
-    pass: Mrd_FLT >= Msd
+    pass: Mrd_FLT >= Mxsd
   };
 
-  // 4.2 FLAMBAGEM LATERAL DA MESA (FLM)
+  // 4.2 FLAMBAGEM LOCAL DA MESA (FLM)
+  // Instabilidade local da mesa na região comprimida.
   const Mpl_FLM_cm = (fy / 10) * Zx;
   const Mr_FLM_cm = 0.7 * (fy / 10) * Wx;
   const lambda_FLM = (bf / 2) / tf;
@@ -105,14 +133,12 @@ export function calculateProfile(profile, loads, material) {
   results.FLM = {
     Mcr: Mcr_FLM_cm, Mpl: Mpl_FLM_cm, Mr: Mr_FLM_cm,
     lambda: lambda_FLM, lambda_p: lambda_p_FLM, lambda_r: lambda_r_FLM,
-    Mrd_formula1: Mpl_FLM_cm / gamma_a1,
-    Mrd_formula2: (1 / gamma_a1) * (Mpl_FLM_cm - (Mpl_FLM_cm - Mr_FLM_cm) * ((lambda_FLM - lambda_p_FLM) / (lambda_r_FLM - lambda_p_FLM))),
-    Mrd_formula3: Mcr_FLM_cm / gamma_a1,
     Mrd: Mrd_FLM,
-    pass: Mrd_FLM >= Msd
+    pass: Mrd_FLM >= Mxsd
   };
 
-  // 4.3 FLAMBAGEM LATERAL DA ALMA (FLA)
+  // 4.3 FLAMBAGEM LOCAL DA ALMA (FLA)
+  // Instabilidade local da alma na região comprimida por flexão.
   const Mpl_FLA_cm = (fy / 10) * Zx;
   const Mr_FLA_cm = (fy / 10) * Wx; 
   const lambda_FLA = d_linha / tw;
@@ -125,7 +151,7 @@ export function calculateProfile(profile, loads, material) {
   } else if (lambda_FLA > lambda_p_FLA && lambda_FLA <= lambda_r_FLA) {
     Mrd_FLA_cm = (1 / gamma_a1) * (Mpl_FLA_cm - (Mpl_FLA_cm - Mr_FLA_cm) * ((lambda_FLA - lambda_p_FLA) / (lambda_r_FLA - lambda_p_FLA)));
   } else {
-    Mrd_FLA_cm = 0; 
+    Mrd_FLA_cm = 0; // Alma excessivamente esbelta (tratamento não abordado aqui)
   }
   
   let Mrd_FLA = Mrd_FLA_cm / 100;
@@ -134,14 +160,15 @@ export function calculateProfile(profile, loads, material) {
   results.FLA = {
     Mpl: Mpl_FLA_cm, Mr: Mr_FLA_cm,
     lambda: lambda_FLA, lambda_p: lambda_p_FLA, lambda_r: lambda_r_FLA,
-    Mrd_formula1: Mpl_FLA_cm / gamma_a1,
-    Mrd_formula2: (1 / gamma_a1) * (Mpl_FLA_cm - (Mpl_FLA_cm - Mr_FLA_cm) * ((lambda_FLA - lambda_p_FLA) / (lambda_r_FLA - lambda_p_FLA))),
-    Mrd_formula3: null,
     Mrd: Mrd_FLA,
-    pass: Mrd_FLA >= Msd
+    pass: Mrd_FLA >= Mxsd
   };
 
-  // 5. CÁLCULO DE RESISTÊNCIA AO CISALHAMENTO
+  // ============================================================================
+  // 5. VERIFICAÇÕES AO CISALHAMENTO
+  // ============================================================================
+  
+  // 5.1 CISALHAMENTO NO EIXO Y (Alma resistindo)
   const Aw = d * tw;
   const Vpl = 0.6 * Aw * (fy / 10);
   const lambda_V = d_linha / tw;
@@ -160,15 +187,61 @@ export function calculateProfile(profile, loads, material) {
   results.Shear = {
     Aw, Vpl, Kv,
     lambda: lambda_V, lambda_p: lambda_p_V, lambda_r: lambda_r_V,
-    Vrd_formula1: Vpl / gamma_a1,
-    Vrd_formula2: (lambda_p_V / lambda_V) * (Vpl / gamma_a1),
-    Vrd_formula3: 1.24 * Math.pow(lambda_p_V / lambda_V, 2) * (Vpl / gamma_a1),
     Vrd: Vrd,
-    pass: Vrd >= Vsd
+    pass: Vrd >= Vysd
   };
 
-  // 6. RESISTÊNCIA À TRAÇÃO
-  const NtRd = (Area * fy) / gamma_a1;
+  // 5.2 CISALHAMENTO NO EIXO X (Mesas resistindo)
+  const Aw_x = 2 * bf * tf;
+  const Vpl_x = 0.6 * Aw_x * (fy / 10);
+  const lambda_Vx = (bf/2) / tf; 
+  const lambda_p_Vx = 1.1 * Math.sqrt((1.2 * E) / fy);
+  const lambda_r_Vx = 1.37 * Math.sqrt((1.2 * E) / fy);
+
+  let Vrd_x = 0;
+  if (lambda_Vx <= lambda_p_Vx) {
+    Vrd_x = Vpl_x / gamma_a1;
+  } else if (lambda_Vx > lambda_p_Vx && lambda_Vx <= lambda_r_Vx) {
+    Vrd_x = (lambda_p_Vx / lambda_Vx) * (Vpl_x / gamma_a1);
+  } else {
+    Vrd_x = 1.24 * Math.pow(lambda_p_Vx / lambda_Vx, 2) * (Vpl_x / gamma_a1);
+  }
+
+  results.ShearX = {
+    Vrd: Vrd_x,
+    pass: Vrd_x >= Vxsd
+  };
+
+  // ============================================================================
+  // 6. FLEXÃO NO EIXO FRACO (Y)
+  // Momento resistente à flambagem da mesa no eixo Y.
+  // ============================================================================
+  const Mpl_y_cm = (fy / 10) * Zy;
+  const Mr_y_cm = 0.7 * (fy / 10) * Wy;
+  const Mcr_FLMy_cm = ((0.69 * (E / 10)) / Math.pow(lambda_FLM, 2)) * Wy;
+  let Mrd_y_cm = 0;
+  if (lambda_FLM <= lambda_p_FLM) {
+    Mrd_y_cm = Mpl_y_cm / gamma_a1;
+  } else if (lambda_FLM > lambda_p_FLM && lambda_FLM <= lambda_r_FLM) {
+    Mrd_y_cm = (1 / gamma_a1) * (Mpl_y_cm - (Mpl_y_cm - Mr_y_cm) * ((lambda_FLM - lambda_p_FLM) / (lambda_r_FLM - lambda_p_FLM)));
+  } else {
+    Mrd_y_cm = Mcr_FLMy_cm / gamma_a1;
+  }
+  
+  const Mrd_y_max = (1.5 * Wy * (fy / 10)) / gamma_a1;
+  if (Mrd_y_cm > Mrd_y_max) Mrd_y_cm = Mrd_y_max;
+  
+  const Mrd_y = Mrd_y_cm / 100;
+
+  results.BendingY = {
+    Mrd: Mrd_y,
+    pass: Mrd_y >= Mysd
+  };
+
+  // ============================================================================
+  // 7. ESFORÇO AXIAL: TRAÇÃO
+  // ============================================================================
+  const NtRd = (Area * fy) / gamma_a1; // Capacidade no escoamento bruto
   const isTension = Nsd > 0;
 
   results.Tension = {
@@ -176,8 +249,12 @@ export function calculateProfile(profile, loads, material) {
     pass: isTension ? (NtRd >= Math.abs(Nsd)) : true
   };
 
-  // 7. RESISTÊNCIA À COMPRESSÃO
-  const G_val = 7700;
+  // ============================================================================
+  // 8. ESFORÇO AXIAL: COMPRESSÃO (Flambagem Global e Local)
+  // ============================================================================
+  
+  // 8.1 Flambagem Global
+  const G_val = 7700; // Constante de rigidez à torção do aço
   
   const Nex = (Math.pow(Math.PI, 2) * E * Ix) / Math.pow(Lx, 2);
   const Ney = (Math.pow(Math.PI, 2) * E * Iy) / Math.pow(Ly, 2);
@@ -195,7 +272,7 @@ export function calculateProfile(profile, loads, material) {
     chi = 0.877 / Math.pow(lambda0, 2);
   }
 
-  // Flambagem Local (Aef)
+  // 8.2 Flambagem Local (Determinação da Área Efetiva Aef)
   const b_AL = bf / 2;
   const t_AL = tf;
   const bt_AL = b_AL / t_AL;
@@ -206,7 +283,7 @@ export function calculateProfile(profile, loads, material) {
   const lambda_AL = bt_lim_AL / Math.sqrt(chi);
   
   let bef_AL = b_AL;
-  if (bt_AL > lambda_AL || bt_AL > bt_lim_AL) {
+  if (bt_AL > lambda_AL || bt_AL > bt_lim_AL) { 
     bef_AL = b_AL * (1 - c1_AL * Math.sqrt(sigma_el_AL / (chi * fy))) * Math.sqrt(sigma_el_AL / (chi * fy));
     if (bef_AL > b_AL) bef_AL = b_AL;
   }
@@ -240,21 +317,26 @@ export function calculateProfile(profile, loads, material) {
     pass: isCompression ? (NcRd >= Math.abs(Nsd)) : true
   };
 
-  // 8. ESFORÇOS COMBINADOS
+  // ============================================================================
+  // 9. ESFORÇOS COMBINADOS (Interação Flexo-Compressão ou Flexo-Tração)
+  // ============================================================================
   let combinedRatio = 0;
   const Mrdx = Math.min(Mrd_FLT, Mrd_FLM, Mrd_FLA || Infinity);
+  const Mrdy = Mrd_y;
   
+  const M_ratio = (Mxsd / Mrdx) + (Mysd / Mrdy);
+
   if (isTension) {
-    combinedRatio = (Nsd / NtRd) + (Msd / Mrdx);
+    combinedRatio = (Nsd / NtRd) + M_ratio;
   } else if (isCompression) {
     const Ncsd = Math.abs(Nsd);
     if ((Ncsd / NcRd) >= 0.2) {
-      combinedRatio = (Ncsd / NcRd) + (8 / 9) * (Msd / Mrdx);
+      combinedRatio = (Ncsd / NcRd) + (8 / 9) * M_ratio;
     } else {
-      combinedRatio = (Ncsd / (2 * NcRd)) + (Msd / Mrdx);
+      combinedRatio = (Ncsd / (2 * NcRd)) + M_ratio;
     }
   } else {
-    combinedRatio = (Msd / Mrdx);
+    combinedRatio = M_ratio;
   }
 
   results.Combined = {
@@ -262,8 +344,9 @@ export function calculateProfile(profile, loads, material) {
     pass: combinedRatio <= 1.0
   };
 
+  // Avaliação Global: só passa se todas as verificações individuais passarem
   results.min_Mrd = Mrdx;
-  results.overallPass = results.FLT.pass && results.FLM.pass && results.FLA.pass && results.Shear.pass && results.Tension.pass && results.Compression.pass && results.Combined.pass;
+  results.overallPass = results.FLT.pass && results.FLM.pass && results.FLA.pass && results.BendingY.pass && results.Shear.pass && results.ShearX.pass && results.Tension.pass && results.Compression.pass && results.Combined.pass;
 
   return results;
 }
